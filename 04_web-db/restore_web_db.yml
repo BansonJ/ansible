@@ -1,0 +1,48 @@
+---
+- name: 복구 작업
+  hosts: webservers
+  tasks:
+    #################################
+    # 1) 방화벽 등록 해제 - http, https, mysql
+    # 2) 서비스 기동 해제
+    # 3) /var/www/html/index.php 삭제
+    # 4) 패키지 삭제 - httpd, mod_ssl, php, mariadb, mariadb-server, python3-PyMySQL
+    ##################################
+    - name: 1) 방화벽 등록 해제 - http, https, mysql
+      become: true
+      ansible.posix.firewalld:
+        service: "{{ item }}"
+        permanent: true
+        immediate: true
+        state: disabled
+      loop:
+        - http
+        - https
+        - mysql
+
+    - name: 2) 서비스 기동 해제 - httpd, mariadb
+      become: true
+      ansible.builtin.service:
+        name: "{{ item }}"
+        state: stopped
+        enabled: false
+      loop:
+        - httpd
+        - mariadb
+
+    - name: 3) /var/www/html/index.php 삭제
+      ansible.builtin.file:
+        path: /var/www/html/index.php
+        state: absent
+
+    - name: 4) 패키지 삭제 - httpd, mod_ssl, php, mariadb, mariadb-server, python3-PyMySQL
+      become: true
+      ansible.builtin.yum:
+        name:
+          - httpd
+          - mod_ssl
+          - php
+          - mariadb
+          - mariadb-server
+          - python3-PyMySQL
+        state: absent

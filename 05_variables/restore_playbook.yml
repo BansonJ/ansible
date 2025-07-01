@@ -1,0 +1,44 @@
+---
+- name: 웹서버 되돌리기
+  hosts: webservers
+  vars_files:
+    - vars/vars.yml
+  tasks:
+    #####################################
+    # 0) 변수 설정
+    # 1) 방화벽 해제 - {{ fw_80_tcp }}, {{ fw_443_tcp }}
+    # 2) 서비스 해제 - {{ svc_web }}, {{ svc_fw }}
+    # 3) 인덱스 삭제 - {{ indexfile }}
+    # 4) 패키지 삭제 - {{ pkg_http }}, {{ pkg_https }}, {{ pkg_required_uri }}
+    ######################################
+      - name: 1) 방화벽 해제 - {{ fw_80_tcp }}, {{ fw_443_tcp }}
+        ansible.posix.firewalld:
+          service: "{{ item }}"
+          permanent: true
+          immediate: true
+          state: disabled
+        loop:
+          - "{{ fw_80_tcp }}"
+          - "{{ fw_443_tcp }}"
+
+      - name: 2) 서비스 해제
+        ansible.builtin.service:
+          name: "{{ item }}"
+          state: stopped
+          enabled: false
+        loop:
+          - "{{ svc_web }}"
+          - "{{ svc_fw }}"
+
+      - name: 3) 인덱스 삭제 - {{ indexfile }}
+        ansible.builtin.file:
+          path: "{{ indexfile }}"
+          state: absent
+
+      - name: 4) 패키지 삭제 - {{ pkg_http }}, {{ pkg_https }}, {{ pkg_required_uri }}
+        ansible.builtin.yum:
+          name:
+            - "{{ pkg_http }}"
+            - "{{ pkg_https }}"
+            - "{{ pkg_required_uri }}"
+          state: absent

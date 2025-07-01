@@ -1,0 +1,14 @@
+---
+- name: 1. 제어노드 PowerOFF
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: 1) 잠시 기다리기
+      ansible.builtin.pause:
+        seconds: 5
+
+    - name: 2) 자기 서버 종료
+      ansible.posix.at:
+        command: shutdown -h now
+        count: 1
+        units: minutes

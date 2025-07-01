@@ -1,0 +1,53 @@
+---
+- name: 1. 고급 웹서버 설정
+  hosts: ansible1.example.com
+  vars_files:
+    - vars/vars.yml
+  tasks:
+    ########################################
+    # 1) 웹 패키지 설치 - httpd, mod_ssl, firewalld (yum),(dnf)
+    # 2) 웹 서비스 설정
+    #   * /etc/httpd/conf/httpd.conf (AllowOverride AuthConfig) (copy)
+    #   * /var/www/html/.htaccess (copy)
+    #   * /etc/httpd/secrets 디렉토리 생성 (file)
+    #   * /etc/httpd/secrets/htpasswd (copy)
+    #   * /var/www/html/index.html  (copy)
+    # 3) 웹 서비스 기동 - httpd, firewalld (service)
+    # 4) 방화벽 등록 - http, https (firewalld)
+    ########################################
+    - name: 1) 방화벽 해제 - http, https
+      ansible.posix.firewalld:
+        port: "{{ item }}"
+        permanent: false
+        immediate: false
+        state: disabled
+      loop:
+        - "80/tcp"
+        - "443/tcp"
+      ignore_errors: true
+
+    - name: 2) 웹 서비스 삭제 - httpd, firewalld (service)
+      ansible.builtin.service:
+        name: "{{ item }}"
+        state: stopped
+        enabled: false
+      loop:
+        - "{{ svc_web }}"
+        - "{{ svc_fw }}"
+
+    - name: 3) 웹 서비스 설정 삭제 - /var/www/html/index.html
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - "{{ ansible_hostname }}"
+        - "{{ secretdir }}"
+        - "/var/www/html/{{ htaccess }}"
+        - "/etc/httpd/conf/{{ webconf }}"
+
+    - name: 4) 웹 패키지 삭제 - {{ pkg_http }}, {{ pkg_https }}
+      ansible.builtin.yum:
+        name:
+          - "{{ pkg_http }}"
+          - "{{ pkg_https }}"
+        state: absent

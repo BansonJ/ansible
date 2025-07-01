@@ -1,0 +1,10 @@
+---
+- name: 1. 사용자 삭제
+  hosts: web1.example.com, web2.example.com
+  vars_files:
+    - secret2.yml
+  tasks:
+    - name: 1) user1 사용자 삭제
+      ansible.builtin.file:
+        name: "{{ username }}"
+        state: absent

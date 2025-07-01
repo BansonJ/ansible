@@ -1,0 +1,6 @@
+---
+- name: 1. 타겟 호스트 PowerOFF
+  ansible.builtin.import_playbook: targethost.yml
+
+- name: 3. 제어 노드 PowerOFF
+  ansible.builtin.import_playbook: controlnode.yml

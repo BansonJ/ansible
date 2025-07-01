@@ -1,0 +1,33 @@
+---
+- name: 1. RESTORE playbook
+  hosts: all
+  tasks:
+    #############################
+    # 1) 패키지 설치 - httpd
+    # 2) 서비스 기동 - httpd
+    # 3) 방화벽 포트 등록 - http
+    #############################
+
+    - name: 1) 방화벽 포트 제거 - http
+      ansible.posix.firewalld:
+        service: http
+        permanent: true
+        immediate: true
+        state: disabled
+
+    - name: 2) 서비스 종료 - httpd
+      ansible.builtin.systemd:
+        name: "{{ ansible_local.custom.general.service }}"
+        state: stopped
+        enabled: false
+      ignore_errors: true
+
+    - name: 3) 패키지 삭제 - httpd
+      ansible.builtin.yum:
+        name: "{{ ansible_local.custom.general.package }}"
+        state: absent
+
+    - name: 4) 사용자 정의 팩트 삭제 - /etc/ansible/facts.d
+      ansible.builtin.file:
+        path: /etc/ansible/facts.d
+        state: absent
