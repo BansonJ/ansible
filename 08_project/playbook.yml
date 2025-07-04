@@ -1,0 +1,47 @@
+---
+- name: 1. 웹서버 설정
+  hosts: webservers
+  gather_facts: true
+  tasks:
+    ##################################
+    # 0) CentOS만 실행
+    # 1) 웹서버 설치, 기동, 설정(include_tasks)
+    #   - 웹 서버 설치, 기동(tasks/web.yml)
+    #   - 웹 설정(tasks/index.yml)
+    # 2) 방화벽 설치, 기동, 포트 등록(import_tasks)
+    #   - 방화벽 패키지, 기동, 포트 등록(tasks/fw.yml)
+    ##################################
+    - name: 0) CentOS만 실행
+      ansible.builtin.fail:
+        msg: Your operation is not CentOS9.
+      when:
+        - ansible_distribution != "CentOS"
+        - ansible_distribution_version != "9"
+
+    - name: 1) 웹서버 설치, 기동, 설정(include_tasks)
+      ansible.builtin.include_tasks: tasks/web.yml
+      vars:
+        pkgs:
+          - httpd
+          - mod_ssl
+        svc: httpd
+
+    - name: 웹 서버 설정
+      ansible.builtin.include_tasks: tasks/placeholder.yml
+      vars:
+        file: /var/www/html/index.html
+
+    - name: 3) 방화벽 설치
+      ansible.builtin.include_tasks: tasks/fw.yml
+      vars:
+        pkgs:
+          - firewalld
+        svc: firewalld
+        fw_svcs:
+          - http
+          - https
+
+- name: 2. 웹 요청
+  ansible.builtin.import_playbook: plays/test.yml
+  vars:
+    url: 'http://ansible1.example.com'

@@ -1,0 +1,47 @@
+- name: Auto push to Git
+  hosts: localhost
+  gather_facts: true
+  vars:
+    git_dir: /home/ansible/ansible    # ← Git 디렉토리 경로 수정
+    git_user_name: "BansonJ"
+    git_user_email: "wjdtmdgus0313@gamil.com"
+    commit_msg: "ansible을 활용한 자동 커밋: {{ ansible_date_time.date }}"
+
+  tasks:
+    - name: Git pull first
+      command: git pull origin main
+      args:
+        chdir: "{{ git_dir }}"
+      register: pull_result
+      failed_when: "'CONFLICT' in pull_result.stderr"
+      changed_when: false
+
+    - name: Git add all files
+      command: git add -A
+      args:
+        chdir: "{{ git_dir }}"
+      changed_when: false
+
+    - name: Git commit
+      command: git commit -m "{{ commit_msg }}"
+      args:
+        chdir: "{{ git_dir }}"
+      register: commit_result
+      failed_when: false
+      changed_when: "'nothing to commit' not in commit_result.stdout"
+
+    - name: Git push
+      command: git push origin main   # 필요 시 main → master로
+      args:
+        chdir: "{{ git_dir }}"
+      register: push_result
+      failed_when: false
+      when: "'nothing to commit' not in commit_result.stdout"
+
+    - name: Show push stderr
+      debug:
+        var: push_result.stderr
+
+    - name: Show push stdout
+      debug:
+        var: push_result.stdout

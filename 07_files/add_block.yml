@@ -1,0 +1,12 @@
+---
+- name: 1. blockinfile test
+  hosts: all
+  tasks:
+    - name: 1) ~devops/users.txt 파일에 여러줄 추가
+      ansible.builtin.blockinfile:
+        path: /home/devops/users.txt
+        block: |
+          2 line
+          3 line
+          4 line
+        state: present

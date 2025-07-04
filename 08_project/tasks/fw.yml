@@ -1,0 +1,19 @@
+---
+- name: 패키지 설치 = "{{ pkgs }}"
+  ansible.builtin.dnf:
+    name: "{{ pkgs }}"
+    state: present
+
+- name: 서비스 기동 - "{{ svc }}"
+  ansible.builtin.systemd:
+    name: "{{ svc }}"
+    state: started
+    enabled: true
+
+- name: 방화벽 포트 등록 - "{{ fw_svcs }}"
+  ansible.posix.firewalld:
+    service: "{{ item }}"
+    permanent: true
+    immediate: true
+    state: enabled
+  loop: "{{ fw_svcs }}"

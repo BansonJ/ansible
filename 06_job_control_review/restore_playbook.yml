@@ -1,0 +1,55 @@
+---
+- name: 0) 작업 제어 실습
+  hosts: webservers
+  gather_facts: true
+  vars_files:
+    - vars/vars.yml
+  tasks:
+    ##############################################
+    # 0) 점검 - MEM > 256, 배포판: CentOS
+    # 1) 방화벽 포트 제거 - http, https
+    # 2) 서비스 종료 - httpd, firewalld
+    # 3) index.html 삭제
+    #   * /var/www/html/index.html
+    # 4) 패키지 삭제 - httpd, mod_ssl
+    ##############################################
+    - name: 0) 점검, (ㄱ)메모리 점검 (ㄴ)배포판 종류 점검
+      ansible.builtin.fail:
+        msg: "메모리가 256M 보다 작거나 CentOS가 아닙니다."
+      when: >
+        ansible_memtotal_mb < min_ram_mb or
+        ansible_distribution != "CentOS"
+
+    - name: 0) 다른 점검, (ㄷ)배포판 버전 점검
+      ansible.builtin.debug:
+        msg: "CentOS Stream 9버전에서만 동작합니다."
+      failed_when: ansible_distribution_version != "9"
+
+    - name: 1) 방화벽에 포트 제거
+      ansible.posix.firewalld:
+        service: "{{ item }}"
+        permanent: false
+        immediate: false
+        state: disabled
+      loop: "{{ firewall_rules }}"
+
+    - name: 2) 서비스 종료 - {{ services }}
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        enabled: false
+        state: stopped
+      loop: "{{ services }}"
+
+    - name: 3) index.html 삭제
+      # * /var/www/html/index.html
+      ansible.builtin.file:
+        path: /var/www/html/index.html
+        state: absent
+
+    - name: 4) 패키지 삭제 - httpd, mod_ssl
+      ansible.builtin.dnf:
+        name: "{{ item }}"
+        state: absent
+      loop:
+        - httpd
+        - mod_ssl

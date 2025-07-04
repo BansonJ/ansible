@@ -1,0 +1,44 @@
+---
+# tasks file for myvhost
+- name: 1) 웹 패키지 설치 - httpd, mod_ssl
+  ansible.builtin.dnf:
+    name:
+      - httpd, mod_ssl
+    state: present
+
+- name: 2) 웹 서비스 기동 - httpd
+  ansible.builtin.systemd:
+    name: httpd
+    state: started
+    enabled: true
+
+- name: 3) 웹 서비스 설정 - /etc/httpd/conf.d/vhost.conf
+  ansible.builtin.template:
+    src: vhost.conf.j2
+    dest: /etc/httpd/conf.d/vhost.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - Restart httpd
+
+- name: 3) 웹 서비스 설정 - /var/www/vhosts/index.html
+  ansible.builtin.file:
+    path: /var/www/vhosts/{{ ansible_hostname }}
+    state: directory
+    mode: '0755'
+
+- name: 3) 웹 서비스 설정 - /var/www/vhosts SELinux 설정
+  community.general.sefcontext:
+    target: '/var/www/vhosts(/.*)?'
+    setype: httpd_sys_content_t
+    state: present
+
+- name: 3) 웹 서비스 설정 - SELinux 적용
+  ansible.builtin.command: restorecon -ir /var/www/vhosts
+
+- name: 3) 웹서비스 설정 - /var/www/html/index.html
+  ansible.builtin.copy:
+    content: '<h1>hi hillo</h1>'
+    dest: /var/www/vhosts/index.html
+    mode: '0644'

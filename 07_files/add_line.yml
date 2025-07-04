@@ -1,0 +1,10 @@
+---
+- name: 1. lineinfile 모듈 테스트
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: 1) ~devops/users.txt 파일에 라인 추가
+      ansible.builtin.lineinfile:
+        path: /home/devops/users.txt
+        line: '추가한 라인'
+        state: present
